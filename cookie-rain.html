@@ -1,0 +1,251 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/comfy.js@latest/dist/comfy.min.js"></script>
+    <style>
+        
+        html,body {
+            margin: 0;
+            font-family: monospace;
+            /*color: hsl(197, 62%, 32%);*/
+            
+            /*background-image: url('frame10.png');
+            background-size: cover;*/
+        }
+
+        canvas{
+            z-index: 2;
+        }
+
+        
+
+
+
+    </style>
+</head>
+<body>
+    <!---
+    <div id="chat">
+        <ul>
+        </ul>
+    </div>
+    --->
+    <canvas id='canvas'></canvas>
+
+        
+    <img id="cookie"src="https://unistix.mypinata.cloud/ipfs/QmRFSomZ2gF77uRDCoAXVEamMjaBaWhukPfCAGsRnvtCig" width="50" 
+     height="50">
+        
+    </div>
+    <script>
+
+        var canvas = document.getElementById("canvas");
+        var ctx = canvas.getContext("2d");
+        var img = document.getElementById("cookie");
+
+
+        var particlesOnScreen = 500;
+        var allFallen = false; 
+        var stopCookie = false;
+
+        var totalframes = 0;
+
+        
+        
+
+
+        var particlesArray = [];
+        var w,h;
+        w =canvas.width = window.innerWidth;
+        h= canvas.height =window.innerHeight;
+
+        function random(min, max){
+            return min + Math.random() * (max - min + 1)
+        }
+
+        function clientResize(ev){
+            w = canvas.width = window.innerWidth
+            h = canvas.height = window.innerHeight
+        }
+
+        window.addEventListener("resize", clientResize);
+
+        
+
+        function createCookies(){
+            for(var i = 0; i < particlesOnScreen; i++){
+
+                particlesArray.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h/2, //make sure it spawns in top half
+                    opacity: Math.random(),
+                    speedX: random(-11,11),
+                    speedY:random(5, 15),
+                    radius: random(50,100)
+
+                })
+                console.log(particlesArray[i].y)
+              
+            
+            }
+            console.log(w)
+            console.log(h)
+        }
+        
+
+        function drawCookies(){
+            
+
+            for( var i=0; i< particlesArray.length; i++){
+                if(!stopCookie){
+              
+                        ctx.drawImage(
+                            img, 
+                            particlesArray[i].x,
+                            particlesArray[i].y,
+                            particlesArray[i].radius,
+                            particlesArray[i].radius
+                            );
+                   
+                
+                }else{
+                    ctx.beginPath();
+                        ctx.arc(
+                            particlesArray[i].x,
+                            particlesArray[i].y,
+                            particlesArray[i].radius,
+                            0,
+                            Math.PI*2,
+                            false)
+
+
+                        
+                    ctx.fillStyle = "#FF0000";
+                    ctx.fill();
+                }
+            }
+          
+        }
+
+        function moveCookies(){
+         
+            for (var i=0; i <particlesArray.length; i++){
+              
+                
+                if(particlesArray[i].y == -50){
+                    particlesArray[i].x = -50; 
+                    particlesArray[i].y = -50;
+
+                }else{
+                    particlesArray[i].x += particlesArray[i].speedX;
+                    particlesArray[i].y += particlesArray[i].speedY;
+
+                }
+                
+                
+
+                if(particlesArray[i].y > h){
+                   
+                    particlesArray[i].x = -50;
+                    particlesArray[i].y = -50; //MINUS 50 is CAUSING A WRAP AROUND!!!!!!
+                    particlesArray[i].radius = 1;
+                    
+
+
+                }
+                
+              
+
+                
+            }
+         
+            yValues = particlesArray.map(value => value.y);
+            console.log("last particle")
+
+
+            if((particlesArray.every(value => value.y == -50))){ //we need the last particle that hits 0 not the last one in the list
+           
+                    ctx.clearRect(0,0,w,h)
+                    allFallen = true; //DO NOT DELETE STOPS COOKIES FROM CONTINUEING
+                    console.log(allFallen)
+                    console.log("the last one fell")
+               
+                    
+                    
+                }
+
+        }
+
+        function updateCookieRain(){
+            totalframes++
+            
+            ctx.clearRect(0,0,w,h)
+            
+            drawCookies();
+            moveCookies();
+
+            
+            if(allFallen){
+                    //
+                    //document.getElementById("canvas").style.display = 'none'; //hide
+                    yValues = particlesArray.map(value => value.y);
+                    console.log("yValues " +yValues.toString() )
+                    console.log("clearInterval")
+                    clearInterval(interval);
+                    ctx.clearRect(0,0,w,h)
+                    particlesArray = []; //emptying array at the end solves non empty array error
+
+
+
+            }
+            console.log("framenumber " + totalframes)
+            console.log("current cookies " + particlesArray.length)
+            
+        }
+
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+        const changeImage = async () => {
+                document.getElementById("canvas").style.display = 'block';//show
+    
+            };
+
+
+        document.getElementById("cookie").style.display = 'none'; //hide big cookie
+        
+        
+        ComfyJS.onConnected = (address, port, isFirstConnect) => {
+           console.log("Connected"); 
+        }
+        
+        
+        ComfyJS.onCommand = ( user, command, message, flags, extra ) => {
+            if( command == "cookierain" ) { 
+              totalframes=0
+              document.getElementById("canvas").style.display = 'block';//show
+              createCookies()
+              console.log( "cookierain was typed in chat" );
+           
+
+              interval = setInterval(updateCookieRain, 50)
+              console.log("interval complete")
+              allFallen = false;
+
+              
+              
+
+
+             
+                
+            }
+        }
+      
+
+
+        ComfyJS.Init(<USERNAME>);
+    </script>
+</body>
+</html>
